@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>COVID-19 X-Ray Translation</title>
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+  <style>
+    /* CSS for the loading element */
+    #loading {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(255, 255, 255, 0.8);
+      z-index: 9999;
+    }
+
+    .spinner {
+      border: 16px solid #f3f3f3;
+      border-top: 16px solid #3498db;
+      border-radius: 50%;
+      width: 80px;
+      height: 80px;
+      animation: spin 2s linear infinite;
+    }
+
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+
+    .container {
+      display: flex;
+      flex-direction: row;
+      align-items: center;
+      justify-content: center;
+      height: 100%;
+    }
+    .window {
+      border: 1px solid #ddd;
+      padding: 20px;
+      text-align: center;
+      background-color: #f9f9f9;
+      margin-bottom: 20px;
+      width: 70%;
+      max-width: 500px;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+    .upload-btn {
+      margin-top: 20px;
+    }
+    .arrow {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 20px;
+    }
+    .transform-btn {
+      font-size: 30px;
+      padding: 15px 30px;
+    }
+    .instructions {
+      margin-top: 50px;
+      text-align: center;
+      font-size: 16px;
+      color: #666;
+    }
+    .footer {
+      margin-top: 50px;
+      text-align: center;
+      font-size: 14px;
+      color: #666;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="window">
+      <h2>Original</h2>
+      <img id="uploaded-image" src="#" alt="Uploaded Image" style="max-width: 100%; max-height: 200px;">
+      <input type="file" id="upload-input" class="upload-btn btn btn-primary" accept="image/*">
+    </div>
+    <div class="arrow">
+      <button id="transform-btn" class="btn btn-primary transform-btn">&#8594;</button>
+    </div>
+    <div class="window">
+      <h2>Generated</h2>
+      <img id="transformed-image" src="#" alt="Transformed Image" style="max-width: 100%; max-height: 200px;">
+    </div>
+  </div>
+  <div class="instructions">
+    <p>Using Generative Adversarial Networks (GANs) to translate normal X-Ray images to COVID-19 X-Ray images.</p>
+    <p>Upload a normal X-Ray image and click the arrow button to generate the corresponding COVID-19 X-Ray image.</p>
+    <p>Follow the instructions provided by healthcare professionals and authorities to prevent the spread of COVID-19.</p>
+  </div>
+  <div class="footer">
+    <p>Stay safe and healthy!</p>
+  </div>
+  <!-- Add the following HTML element for the loading prompt -->
+  <div id="loading" style="display: none;">
+    <div class="spinner"></div>
+    <p>Loading...</p>
+  </div>
+
+  <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.4/dist/umd/popper.min.js"></script>
+  <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+  <script>
+    // Handle image upload
+    document.getElementById('upload-input').addEventListener('change', function (event) {
+      var reader = new FileReader();
+      reader.onload = function () {
+        var img = document.getElementById('uploaded-image');
+        img.src = reader.result;
+      };
+      reader.readAsDataURL(event.target.files[0]);
+    });
+
+    // Handle image transformation
+    document.getElementById('transform-btn').addEventListener('click', function () {
+      var uploadedImg = document.getElementById('uploaded-image');
+      var transformedImg = document.getElementById('transformed-image');
+      var loadingElement = document.getElementById('loading');
+      
+      // Check if no image is uploaded
+      if (!uploadedImg.getAttribute('src') || uploadedImg.getAttribute('src') === '#') {
+        alert("Please select an Image");
+        return;
+      }
+      // Show the loading element
+      loadingElement.style.display = 'flex';
+
+      // Convert the Data URL to raw image data
+      var dataUrl = uploadedImg.src;
+      var byteString = atob(dataUrl.split(',')[1]);
+      var ab = new ArrayBuffer(byteString.length);
+      var ia = new Uint8Array(ab);
+      for (var i = 0; i < byteString.length; i++) {
+        ia[i] = byteString.charCodeAt(i);
+      }
+      var blob = new Blob([ab], { type: 'image/jpeg' });
+
+      // Make an API request to Flask app with the uploaded image
+      // Replace 'API_ENDPOINT' with the actual endpoint URL of your Flask app
+      var formData = new FormData();
+      formData.append('image', blob);
+      fetch('/api/transform', {
+        method: 'POST',
+        body: formData
+      })
+      .then(response => response.blob())
+      .then(blob => {
+        transformedImg.src = URL.createObjectURL(blob);
+        // Hide the loading element when the prediction is done
+        loadingElement.style.display = 'none';
+      })
+      .catch(error => console.error(error));
+    });
+  </script>
+</body>
+</html>
