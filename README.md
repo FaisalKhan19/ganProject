@@ -18,4 +18,4 @@ Make sure to install all the required modules by running `pip install requiremen
 1. Clone the repository:
 
    ```bash
-   git clone https://github.com/your-username/image-transformation-app.git
+   git clone https://github.com/FaisalKhan19/ganProject.git
