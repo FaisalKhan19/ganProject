@@ -145,7 +145,6 @@
       var blob = new Blob([ab], { type: 'image/jpeg' });
 
       // Make an API request to Flask app with the uploaded image
-      // Replace 'API_ENDPOINT' with the actual endpoint URL of your Flask app
       var formData = new FormData();
       formData.append('image', blob);
       fetch('/api/transform', {
