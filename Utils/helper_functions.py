@@ -2,8 +2,8 @@ from PIL import Image
 import io
 import numpy as np
 from flask import send_file
+from keras.utils import img_to_array
 import tensorflow as tf
-from tensorflow.keras.preprocessing.image import img_to_array
 
 
 def preprocess_image(img):

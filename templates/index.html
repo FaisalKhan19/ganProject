@@ -3,7 +3,43 @@
 <head>
   <title>COVID-19 X-Ray Translation</title>
   <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
   <style>
+
+    /* Style for the COVID-19 Statistics section */
+#covid-stats {
+  text-align: center;
+  padding: 20px;
+}
+
+/* Style for the box containing each stat */
+.stats-container {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+/* Style for each individual stat box */
+.stats-container p {
+  width: 200px;
+  height: 100px;
+  margin: 10px;
+  padding: 10px;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  font-size: 18px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+}
+
+/* Style for the heading inside the stat box */
+.stats-container p strong {
+  font-size: 20px;
+  font-weight: bold;
+}
+
     /* CSS for the loading element */
     #loading {
       display: flex;
@@ -52,6 +88,18 @@
     }
     .upload-btn {
       margin-top: 20px;
+      background-color: #4CAF50;
+      color: white;
+      padding: 10px 20px;
+      font-size: 16px;
+      border: none;
+      border-radius: 8px;
+      margin-top: 10px;
+      cursor: pointer;
+      transition: background-color 0.3s;
+    }
+    .upload-btn:hover {
+      background-color: #45a049;
     }
     .arrow {
       display: flex;
@@ -75,14 +123,90 @@
       font-size: 14px;
       color: #666;
     }
+
+    /* Styling for the image container */
+
+/* Styling for the translated image */
+#transformed-image {
+  width: 80%; /* Adjust the width as needed */
+  max-height: 400px; /* Adjust the height as needed */
+  display: block;
+  margin: 0 auto;
+  border: 2px solid #ddd;
+  border-radius: 8px;
+}
+
+/* Styling for the Save Image button */
+#saveButton {
+  background-color: #4CAF50;
+  color: white;
+  padding: 10px 20px;
+  font-size: 16px;
+  border: none;
+  border-radius: 8px;
+  margin-top: 10px;
+  cursor: pointer;
+  transition: background-color 0.3s;
+}
+
+#saveButton:hover {
+  background-color: #45a049;
+}
+.error-message {
+  color: red;
+  font-weight: bold;
+  text-align: center;
+  padding: 10px;
+}
+
+
+/* Your existing CSS styles go here */
+
+/* Dark mode styles */
+.dark-mode {
+  background-color: #222;
+  color: #fff;
+}
+
+/* Style for dark mode button */
+.dark-mode-button {
+  /* Add your styles for the button here */
+  font-size: 24px;
+  background-color: transparent;
+  border: none;
+  cursor: pointer;
+}
+
+.window.dark-mode{
+  background-color:#333;
+  color: #fff;
+
+}
+#map {
+  width: 100%;
+  height: 500px; 
+}
+
+
   </style>
 </head>
 <body>
+
+
+
+<button id="dark-mode-toggle" class="dark-mode-button">
+  🌙 
+</button>
+
+
+
+  <h1 align ='center'>Image to Image Translation</h1>
+  <br>
   <div class="container">
     <div class="window">
       <h2>Original</h2>
       <img id="uploaded-image" src="#" alt="Uploaded Image" style="max-width: 100%; max-height: 200px;">
-      <input type="file" id="upload-input" class="upload-btn btn btn-primary" accept="image/*">
+      <input type="file" id="upload-input" class="upload-btn btn btn-primary" accept="image/*" >
     </div>
     <div class="arrow">
       <button id="transform-btn" class="btn btn-primary transform-btn">&#8594;</button>
@@ -90,7 +214,9 @@
     <div class="window">
       <h2>Generated</h2>
       <img id="transformed-image" src="#" alt="Transformed Image" style="max-width: 100%; max-height: 200px;">
+      <button id="saveButton">Download Image</button>
     </div>
+
   </div>
   <div class="instructions">
     <p>Using Generative Adversarial Networks (GANs) to translate normal X-Ray images to COVID-19 X-Ray images.</p>
@@ -106,9 +232,29 @@
     <p>Loading...</p>
   </div>
 
+  <section id="covid-stats">
+    <h2>COVID-19 Statistics</h2>
+    <div class="stats-container">
+      <p><strong>Total Cases:</strong> <span id="total-cases">Loading...</span></p>
+      <p><strong>Active Cases:</strong> <span id="active-cases">Loading...</span></p>
+      <p><strong>Recovered Cases:</strong> <span id="recovered-cases">Loading...</span></p>
+      <p><strong>Total Deaths:</strong> <span id="total-deaths">Loading...</span></p>
+    </div>
+    <p id="error-message" class="error-message"></p>
+  </section>
+
+  <section id="covid-map">
+    <div id="map"></div>
+  </section>
+
+  
+  
+  
+
   <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.4/dist/umd/popper.min.js"></script>
   <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+  <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
   <script>
     // Handle image upload
     document.getElementById('upload-input').addEventListener('change', function (event) {
@@ -159,6 +305,108 @@
       })
       .catch(error => console.error(error));
     });
-  </script>
+
+    // JavaScript
+    document.getElementById("saveButton").addEventListener("click", function () {
+      // Get the translated image element
+      const translatedImage = document.getElementById("transformed-image");
+
+      // Create a temporary anchor element
+      const downloadLink = document.createElement("a");
+
+      // Set the anchor's href attribute to the data URL of the translated image
+      downloadLink.href = translatedImage.src;
+
+      // Set the download attribute to the desired file name (you can customize this)
+      downloadLink.download = "covid_xray_translated.png";
+
+      // Trigger a click event on the anchor element to start the download
+      downloadLink.click();
+    });
+    // Function to fetch COVID-19 statistics from the API
+
+      async function fetchCovidStats() {
+        try {
+          const response = await fetch('https://disease.sh/v3/covid-19/all');
+          if (!response.ok) {
+            throw new Error('Failed to fetch COVID-19 statistics');
+          }
+          const data = await response.json();
+    
+          // Update the HTML content with the retrieved data
+          document.getElementById('active-cases').textContent = data.active;
+          document.getElementById('total-cases').textContent = data.cases;
+          document.getElementById('recovered-cases').textContent = data.recovered;
+          document.getElementById('total-deaths').textContent = data.deaths;
+        } catch (error) {
+          console.error('Error fetching COVID-19 statistics:', error);
+          document.getElementById('error-message').textContent = 'Failed to fetch COVID-19 statistics. Please try again later.';
+        }
+      }
+    
+
+      fetchCovidStats();
+
+        // Function to toggle dark mode
+        function toggleDarkMode() {
+          const body = document.body;
+          body.classList.toggle('dark-mode');
+          // Apply dark mode styles to image sections
+          const imageSections = document.querySelectorAll('.window');
+          imageSections.forEach(section => section.classList.toggle('dark-mode'));
+        
+          // Toggle the button content (moon/sun icon) based on dark mode
+          const darkModeButton = document.getElementById('dark-mode-toggle');
+          if (body.classList.contains('dark-mode')) {
+            darkModeButton.textContent = '☀️'; // Sun icon when in dark mode
+          } else {
+            darkModeButton.textContent = '🌙'; // Moon icon when in light mode
+          }
+        }
+        
+        // Event listener for dark mode toggle button
+        const darkModeToggle = document.getElementById('dark-mode-toggle');
+        darkModeToggle.addEventListener('click', toggleDarkMode);
+
+
+
+      
+          // Function to fetch COVID-19 data from the API and display it on the map
+          async function showCovidDataOnMap() {
+            try {
+              const response = await fetch('https://corona.lmao.ninja/v3/covid-19/countries'); 
+              const data = await response.json();
+              
+              // Process the data to get latitude, longitude, and other details
+          
+              // Initialize the map
+              const map = L.map('map').setView([20,77], 5); //default set to india
+              
+              // Add a tile layer to the map
+              L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+          
+              // Loop through the data and add markers to the map
+              data.forEach(item => {
+                const { country, cases, deaths, recovered, countryInfo,tests } = item;
+                const lat = countryInfo.lat;
+                const long = countryInfo.long;
+          
+                const marker = L.marker([lat, long]).addTo(map);
+                marker.bindPopup(`<strong>${country}</strong><br>
+                Total Cases: ${cases}<br>
+                Total Deaths: ${deaths}<br>
+                Total Recovered: ${recovered}`);
+              });
+            } catch (error) {
+              console.error('Error fetching COVID-19 data:', error);
+            }
+          }
+          
+          // Call the function to display COVID-19 data on the map
+          showCovidDataOnMap();
+          
+          
+        </script>
+        
 </body>
 </html>
